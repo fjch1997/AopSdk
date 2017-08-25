@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+  <metadata>
+    <id>AopSdk.Net40</id>
+    <version>$version$</version>
+    <description>支付宝官方 alipay-sdk-NET-20170818173742.zip 打包的 AopSdk，升级为.Net 4.0 版本。若支付宝官方有更新，请 Pull Request 至我的 Github Repo，我将会同时更新该 Nuget 包。</description>
+    <authors>杭州蚂蚁金服</authors>
+  </metadata>
+  <files>
+    <file src="bin\Release\AopSdk.pdb" target="lib\net40"/>
+  </files>
+</package>
