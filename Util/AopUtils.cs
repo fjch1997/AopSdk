@@ -42,7 +42,10 @@ namespace Aop.Api.Util
         {
             return AlipaySignature.RSASign(parameters, privateKeyPem, charset, keyFromFile,signType);
         }
-
+        public static string SignAopRequest(IDictionary<string, string> parameters, Func<RSACryptoServiceProvider> privateKey, string charset, string signType)
+        {
+            return AlipaySignature.RSASign(parameters, privateKey, charset, signType);
+        }
 
         /// <summary>
         /// 清除字典中值为空的项。

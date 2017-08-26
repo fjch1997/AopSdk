@@ -13,6 +13,7 @@ using System.Net;
 using System.Xml;
 using Jayrock.Json;
 using Jayrock.Json.Conversion;
+using System.Security.Cryptography;
 
 namespace Aop.Api
 {
@@ -43,6 +44,7 @@ namespace Aop.Api
         private string format;
         private string serverUrl;
         private string appId;
+        private Func<RSACryptoServiceProvider> privateKeyRsaCryptoServiceProvider;
         private string privateKeyPem;
         private string signType = "RSA";
         private string charset;
@@ -77,6 +79,56 @@ namespace Aop.Api
 
         #region DefaultAopClient Constructors
 
+        public DefaultAopClient(string serverUrl, string appId, Func<RSACryptoServiceProvider> privateKey)
+        {
+            this.appId = appId;
+            this.privateKeyRsaCryptoServiceProvider = privateKey;
+            this.serverUrl = serverUrl;
+            this.webUtils = new WebUtils();
+        }
+        
+        public DefaultAopClient(string serverUrl, string appId, Func<RSACryptoServiceProvider> privateKey, string format)
+        {
+            this.appId = appId;
+            this.privateKeyRsaCryptoServiceProvider = privateKey;
+            this.serverUrl = serverUrl;
+            this.format = format;
+            this.webUtils = new WebUtils();
+        }
+
+        public DefaultAopClient(string serverUrl, string appId, Func<RSACryptoServiceProvider> privateKey, string format, string charset)
+            : this(serverUrl, appId, privateKey, format)
+        {
+            this.charset = charset;
+        }
+
+        public DefaultAopClient(string serverUrl, string appId, Func<RSACryptoServiceProvider> privateKey, string format, string version, string signType)
+            : this(serverUrl, appId, privateKey)
+        {
+            this.format = format;
+            this.version = version;
+            this.signType = signType;
+        }
+
+        public DefaultAopClient(string serverUrl, string appId, Func<RSACryptoServiceProvider> privateKey, string format, string version, string signType, string alipayPulicKey)
+            : this(serverUrl, appId, privateKey, format, version, signType)
+        {
+            this.alipayPublicKey = alipayPulicKey;
+        }
+
+        public DefaultAopClient(string serverUrl, string appId, Func<RSACryptoServiceProvider> privateKey, string format, string version, string signType, string alipayPulicKey, string charset)
+            : this(serverUrl, appId, privateKey, format, version, signType, alipayPulicKey)
+        {
+            this.charset = charset;
+        }
+        
+        public DefaultAopClient(string serverUrl, string appId, Func<RSACryptoServiceProvider> privateKey, string format, string version, string signType, string alipayPulicKey, string charset, string encyptKey)
+            : this(serverUrl, appId, privateKey, format, version, signType, alipayPulicKey, charset)
+        {
+            this.encyptKey = encyptKey;
+            this.encyptType = "AES";
+        }
+        
         public DefaultAopClient(string serverUrl, string appId, string privateKeyPem)
         {
             this.appId = appId;
@@ -128,7 +180,7 @@ namespace Aop.Api
         {
             this.charset = charset;
         }
-        //
+        
         public DefaultAopClient(string serverUrl, string appId, string privateKeyPem, string format, string version, string signType, string alipayPulicKey, string charset, bool keyFromFile)
             : this(serverUrl, appId, privateKeyPem, format, version, signType, alipayPulicKey)
         {
@@ -219,7 +271,10 @@ namespace Aop.Api
             IDictionary<string, string> sortedTxtParams = new SortedDictionary<string, string>(txtParams);
             txtParams = new AopDictionary(sortedTxtParams);
             // 排序返回字典类型添加签名参数
-            txtParams.Add(SIGN, AopUtils.SignAopRequest(sortedTxtParams, privateKeyPem, this.charset, this.keyFromFile, this.signType));
+            if(privateKeyRsaCryptoServiceProvider != null)
+                txtParams.Add(SIGN, AopUtils.SignAopRequest(sortedTxtParams, privateKeyRsaCryptoServiceProvider, this.charset, this.signType));
+            else
+                txtParams.Add(SIGN, AopUtils.SignAopRequest(sortedTxtParams, privateKeyPem, this.charset, this.keyFromFile, this.signType));
 
             // 是否需要上传文件
             string body;
@@ -358,7 +413,10 @@ namespace Aop.Api
             }
 
             // 添加签名参数
-            txtParams.Add(SIGN, AopUtils.SignAopRequest(txtParams, privateKeyPem, charset, this.keyFromFile, signType));
+            if(privateKeyRsaCryptoServiceProvider != null)
+                txtParams.Add(SIGN, AopUtils.SignAopRequest(txtParams, privateKeyRsaCryptoServiceProvider, charset, signType));
+            else
+                txtParams.Add(SIGN, AopUtils.SignAopRequest(txtParams, privateKeyPem, charset, this.keyFromFile, signType));
 
 
 
@@ -575,8 +633,11 @@ namespace Aop.Api
 
             // 参数签名
             String charset = String.IsNullOrEmpty(this.charset) ? "utf-8" : this.charset;
-            String signResult = AopUtils.SignAopRequest(sortedAopDic, privateKeyPem, charset, this.keyFromFile, this.signType);
-
+            String signResult;
+            if(privateKeyRsaCryptoServiceProvider != null)
+                signResult = AopUtils.SignAopRequest(sortedAopDic, privateKeyRsaCryptoServiceProvider, charset, this.signType);
+            else
+                signResult = AopUtils.SignAopRequest(sortedAopDic, privateKeyPem, charset, this.keyFromFile, this.signType);
             // 添加签名结果参数
             sortedAopDic.Add(SIGN, signResult);
 
