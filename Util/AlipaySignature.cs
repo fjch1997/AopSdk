@@ -120,10 +120,10 @@ namespace Aop.Api.Util
             return Convert.ToBase64String(signatureBytes);
         }
 
-        public static string RSASignCharSet(string data, Func<RSACryptoServiceProvider> privateKey, string charset, string signType)
+        public static string RSASignCharSet(string data, Func<RSA> privateKey, string charset, string signType)
         {
             byte[] signatureBytes = null;
-            using (RSACryptoServiceProvider rsaCsp = privateKey())
+            using (RSA rsa = privateKey())
             {
                 byte[] dataBytes = null;
                 if (string.IsNullOrEmpty(charset))
@@ -134,19 +134,18 @@ namespace Aop.Api.Util
                 {
                     dataBytes = Encoding.GetEncoding(charset).GetBytes(data);
                 }
-                if (null == rsaCsp)
+                if (null == rsa)
                 {
                     throw new AopException("您使用的私钥格式错误，请检查RSA私钥配置" + ",charset = " + charset);
                 }
                 if ("RSA2".Equals(signType))
                 {
 
-                    signatureBytes = rsaCsp.SignData(dataBytes, "SHA256");
-
+                    signatureBytes = rsa.SignData(dataBytes, "SHA256");
                 }
                 else
                 {
-                    signatureBytes = rsaCsp.SignData(dataBytes, "SHA1");
+                    signatureBytes = rsa.SignData(dataBytes, "SHA1");
                 }
             }
             return Convert.ToBase64String(signatureBytes);
